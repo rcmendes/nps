@@ -1,26 +1,35 @@
 import { Request, Response } from "express";
-import { getRepository } from "typeorm";
-import { User } from "../models/User";
+import { getCustomRepository } from "typeorm";
+import { UserRepository } from "../repositories/UserRepository";
 import { UserAlreadyExistsError } from "./exceptions";
 
 class UserController {
     async registry(request: Request, response: Response) {
         const { name, email } = request.body;
 
-        const usersRepository = getRepository(User);
-
-        const isUserExists = usersRepository.findOne({ email });
+        const userRepository = getCustomRepository(UserRepository);
+        
+        const isUserExists = await userRepository.findOne({ email });
+        
         if (isUserExists) {
             return response.status(400).send(new UserAlreadyExistsError());
         }
 
-        const user = usersRepository.create({
+        const user = userRepository.create({
             name, email
         })
 
-        await usersRepository.save(user);
+        await userRepository.save(user);
 
-        return response.send(user);
+        return response.status(201).send(user);
+    }
+
+    async listAll(request:Request, response: Response) {
+        const userRepository = getCustomRepository(UserRepository);
+
+        const list = await userRepository.find();
+
+        return response.send(list);
     }
 }
 
